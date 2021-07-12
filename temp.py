@@ -1,18 +1,21 @@
 import numpy as np
-import time
-import cv2
-import math as m
+import time, cv2, math as m
 import matplotlib.image as mpimg
 import math
 import datetime
 from googleapiclient.discovery import build
 from google.oauth2 import service_account
+import schedule
+import time
 
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 SERVICE_ACCOUNT_FILE = 'keys.json'
 creds = None
 creds = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
 SAMPLE_SPREADSHEET_ID = '1Sy34s0VXEBxLzoAQsCPNZR51pHKAfYwEzM-ZmGZshFY'
+SAMPLE_SPREADSHEET_HOURLY_ID = '1zLltVIHhMlZ1-of08FsoSeRkXlAwjXgs36YB4MCB6hw'
+SAMPLE_SPREADSHEET_DAILY_ID = '1046kIbYtbJxkNMgZGUthYrbD07JPZv_NEeJGpxLu8oI'
+SAMPLE_SPREADSHEET_WEEKLY_ID = '1l6yZlZAFJRJLDZKYFym63EjwAIkCcI2ev-FCUavJHH4'
 service = build('sheets', 'v4', credentials=creds)
 sheet = service.spreadsheets()
 
@@ -24,6 +27,10 @@ frameheight = 0
 list_of_vehicles = ["bicycle", "car", "motorbike", "bus", "person"]
 
 values = {"two_wheeler": 0, "four_wheeler": 0, "pedestrian": 0 }
+valuesHourly = {"two_wheeler": 0, "four_wheeler": 0, "pedestrian": 0 }
+valuesDaily = {"two_wheeler": 0, "four_wheeler": 0, "pedestrian": 0 }
+valuesWeekly = {"two_wheeler": 0, "four_wheeler": 0, "pedestrian": 0 }
+
 two_wheeler = ["bicycle", "motorbike"]
 four_wheeler = ["car", "bus","truck"]
 pedestrian = ["person"]
@@ -56,6 +63,24 @@ class BoundingBox:
 flag = 0
 threshold = 20  # m.inf
 
+def uploadDataHourly():
+    global valuesHourly
+    # datetime.datetime.now() <-- For timestamp
+    finalList = [[valuesHourly['two_wheeler'], valuesHourly['four_wheeler'], valuesHourly['pedestrian']]]
+    valuesHourly = {"two_wheeler": 0, "four_wheeler": 0, "pedestrian": 0 }
+    request = sheet.values().append(spreadsheetId=SAMPLE_SPREADSHEET_HOURLY_ID, range="sample1!A1:C1", valueInputOption="USER_ENTERED", insertDataOption = "INSERT_ROWS", body={"values":finalList}).execute()
+
+def uploadDataDaily():
+    global valuesDaily
+    finalList = [[valuesDaily['two_wheeler'], valuesDaily['four_wheeler'], valuesDaily['pedestrian']]]
+    valuesDaily = {"two_wheeler": 0, "four_wheeler": 0, "pedestrian": 0 }
+    request = sheet.values().append(spreadsheetId=SAMPLE_SPREADSHEET_DAILY_ID, range="sample1!A1:C1", valueInputOption="USER_ENTERED", insertDataOption = "INSERT_ROWS", body={"values":finalList}).execute()
+
+def uploadDataWeekly():
+    global valuesWeekly
+    finalList = [[valuesWeekly['two_wheeler'], valuesWeekly['four_wheeler'], valuesWeekly['pedestrian']]]
+    valuesWeekly = {"two_wheeler": 0, "four_wheeler": 0, "pedestrian": 0 }
+    request = sheet.values().append(spreadsheetId=SAMPLE_SPREADSHEET_WEEKLY_ID, range="sample1!A1:C1", valueInputOption="USER_ENTERED", insertDataOption = "INSERT_ROWS", body={"values":finalList}).execute()
 
 def compare(old, new):
     global flag
@@ -136,10 +161,19 @@ def validcomparison(centerX, centerY):
 def assignLabel(id):
     if(id in two_wheeler):
         values['two_wheeler'] = values['two_wheeler'] + 1
+        valuesHourly['two_wheeler'] = valuesHourly['two_wheeler'] + 1
+        valuesDaily['two_wheeler'] = valuesDaily['two_wheeler'] + 1
+        valuesWeekly['two_wheeler'] = valuesWeekly['two_wheeler'] + 1
     elif(id in four_wheeler):
         values['four_wheeler'] = values['four_wheeler'] + 1
+        valuesHourly['four_wheeler'] = valuesHourly['four_wheeler'] + 1
+        valuesDaily['four_wheeler'] = valuesDaily['four_wheeler'] + 1
+        valuesWeekly['four_wheeler'] = valuesWeekly['four_wheeler'] + 1
     elif(id in pedestrian):
         values['pedestrian'] = values['pedestrian'] + 1
+        valuesHourly['pedestrian'] = valuesHourly['pedestrian'] + 1
+        valuesDaily['pedestrian'] = valuesDaily['pedestrian'] + 1
+        valuesWeekly['pedestrian'] = valuesWeekly['pedestrian'] + 1
 
 
 def count_vehicles(idxs, boxes, classIDs, vehicle_count, previous_frame_detections, frame):
@@ -162,9 +196,7 @@ def count_vehicles(idxs, boxes, classIDs, vehicle_count, previous_frame_detectio
                 current_detections[(centerX, centerY, t)] = vehicle_count
                 if (not boxInPreviousFrames(previous_frame_detections, (centerX, centerY, vehicle_count, t), current_detections)):
                     vehicle_count += 1
-                    # print("counting")
                     assignLabel(LABELS[classIDs[i]])
-                    # print(values)
                 ID = current_detections.get((centerX, centerY, t))
                 # If there are two detections having the same ID due to being too close,
                 # then assign a new ID to current detection.
@@ -268,9 +300,17 @@ for k in range(1, 91):
     for cx, cy, t in current_detections:
         previous_frame_detections.append(BoundingBox(
             cx, cy, current_detections.get((cx, cy, t)), t))
+
+    #Scheduler
+    schedule.every().hour.do(uploadDataHourly)
+    schedule.every().day.at("23:59").do(uploadDataDaily)
+    schedule.every().monday().do(uploadDataWeekly)
+
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
     
-    finalList = [[values['two_wheeler'], values['four_wheeler'], values['pedestrian']]]
-    request = sheet.values().append(spreadsheetId=SAMPLE_SPREADSHEET_ID, range="sample1!A1:C1", valueInputOption="USER_ENTERED", insertDataOption = "INSERT_ROWS", body={"values":finalList}).execute()
+    
 
 end = time.time()
 print(end - start)
