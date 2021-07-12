@@ -8,6 +8,9 @@ from google.oauth2 import service_account
 import schedule
 import time
 
+
+frameReadPath = 'D:\\Capstone\\images\\ezgif-frame-0'
+savePath = 'C:\\Users\\ayush\\Desktop\\saved\\saved_image-0'
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 SERVICE_ACCOUNT_FILE = 'keys.json'
 creds = None
@@ -68,19 +71,28 @@ def uploadDataHourly():
     # datetime.datetime.now() <-- For timestamp
     finalList = [[valuesHourly['two_wheeler'], valuesHourly['four_wheeler'], valuesHourly['pedestrian']]]
     valuesHourly = {"two_wheeler": 0, "four_wheeler": 0, "pedestrian": 0 }
-    request = sheet.values().append(spreadsheetId=SAMPLE_SPREADSHEET_HOURLY_ID, range="sample1!A1:C1", valueInputOption="USER_ENTERED", insertDataOption = "INSERT_ROWS", body={"values":finalList}).execute()
+    request = sheet.values().append(spreadsheetId=SAMPLE_SPREADSHEET_ID, range="Hourly!A1:C1", valueInputOption="USER_ENTERED", insertDataOption = "INSERT_ROWS", body={"values":finalList}).execute()
 
 def uploadDataDaily():
     global valuesDaily
     finalList = [[valuesDaily['two_wheeler'], valuesDaily['four_wheeler'], valuesDaily['pedestrian']]]
     valuesDaily = {"two_wheeler": 0, "four_wheeler": 0, "pedestrian": 0 }
-    request = sheet.values().append(spreadsheetId=SAMPLE_SPREADSHEET_DAILY_ID, range="sample1!A1:C1", valueInputOption="USER_ENTERED", insertDataOption = "INSERT_ROWS", body={"values":finalList}).execute()
+    request = sheet.values().append(spreadsheetId=SAMPLE_SPREADSHEET_ID, range="Daily!A1:C1", valueInputOption="USER_ENTERED", insertDataOption = "INSERT_ROWS", body={"values":finalList}).execute()
 
 def uploadDataWeekly():
     global valuesWeekly
     finalList = [[valuesWeekly['two_wheeler'], valuesWeekly['four_wheeler'], valuesWeekly['pedestrian']]]
     valuesWeekly = {"two_wheeler": 0, "four_wheeler": 0, "pedestrian": 0 }
-    request = sheet.values().append(spreadsheetId=SAMPLE_SPREADSHEET_WEEKLY_ID, range="sample1!A1:C1", valueInputOption="USER_ENTERED", insertDataOption = "INSERT_ROWS", body={"values":finalList}).execute()
+    request = sheet.values().append(spreadsheetId=SAMPLE_SPREADSHEET_ID, range="Weekly!A1:C1", valueInputOption="USER_ENTERED", insertDataOption = "INSERT_ROWS", body={"values":finalList}).execute()
+
+#Scheduler
+# schedule.every().hour.do(uploadDataHourly)
+# schedule.every().day.at("23:59").do(uploadDataDaily)
+# schedule.every().monday().do(uploadDataWeekly)
+
+schedule.every(10).seconds.do(uploadDataHourly)
+schedule.every(20).seconds.do(uploadDataDaily)
+schedule.every(30).seconds.do(uploadDataWeekly)
 
 def compare(old, new):
     global flag
@@ -226,9 +238,10 @@ ln = net.getLayerNames()
 ln = [ln[i[0] - 1] for i in net.getUnconnectedOutLayers()]
 
 vehicle_count = 0
+print('here')
 for k in range(1, 91):
-    # print("new frame", k+1)
-    frame = cv2.imread('.\\images\\ezgif-frame-0'+str(k)+'.jpg')
+    print("new frame", k+1)
+    frame = cv2.imread(frameReadPath +str(k)+'.jpg')
     inputWidth = frame.shape[1]
     inputHeight = frame.shape[0]
     # cv2.imwrite("C:\\Users\\ayush\\Desktop\\new\\saved"+str(k)+".jpg", frame)
@@ -291,7 +304,7 @@ for k in range(1, 91):
     displayVehicleCount(frame, vehicle_count)
 
     # image saved to disk (name: saved_image, src: frame)
-    path = 'C:\\Users\\ayush\\Desktop\\saved\\saved_image-0'+str(k)+'.jpg'
+    path = savePath +str(k)+'.jpg'
     cv2.imwrite(path, frame)
 
     # Updating with the current frame detections
@@ -301,16 +314,12 @@ for k in range(1, 91):
         previous_frame_detections.append(BoundingBox(
             cx, cy, current_detections.get((cx, cy, t)), t))
 
-    #Scheduler
-    schedule.every().hour.do(uploadDataHourly)
-    schedule.every().day.at("23:59").do(uploadDataDaily)
-    schedule.every().monday().do(uploadDataWeekly)
-
-    while True:
-        schedule.run_pending()
-        time.sleep(1)
-    
-    
+    # while True:
+    schedule.run_pending()
+    # time.sleep(1)
+    # finalList = [[valuesHourly['two_wheeler'], valuesHourly['four_wheeler'], valuesHourly['pedestrian']]]
+    # request = sheet.values().append(spreadsheetId=SAMPLE_SPREADSHEET_ID, range="sample1!A1:C1", valueInputOption="USER_ENTERED", insertDataOption = "INSERT_ROWS", body={"values":finalList}).execute()
+    # uploadDataHourly()
 
 end = time.time()
 print(end - start)
