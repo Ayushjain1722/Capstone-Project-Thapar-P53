@@ -11,6 +11,7 @@ import time
 
 frameReadPath = 'D:\\Capstone\\images\\ezgif-frame-0'
 savePath = 'C:\\Users\\ayush\\Desktop\\saved\\saved_image-0'
+videoPath = 'C:\\Users\\ayush\\Desktop\\7th Semester\\4. Capstone Project\\Test Videos\\videoplayback.mp4'
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 SERVICE_ACCOUNT_FILE = 'keys.json'
 creds = None
@@ -238,88 +239,109 @@ ln = net.getLayerNames()
 ln = [ln[i[0] - 1] for i in net.getUnconnectedOutLayers()]
 
 vehicle_count = 0
-print('here')
-for k in range(1, 91):
-    print("new frame", k+1)
-    frame = cv2.imread(frameReadPath +str(k)+'.jpg')
-    inputWidth = frame.shape[1]
-    inputHeight = frame.shape[0]
-    # cv2.imwrite("C:\\Users\\ayush\\Desktop\\new\\saved"+str(k)+".jpg", frame)
+# print('here')
+# for k in range(1, 91):
 
-    boxes, confidences, classIDs = [], [], []
-    frame = frame[inputHeight//2:inputHeight, inputWidth//2:inputWidth]
 
-    frameheight = int((inputHeight//2)//32) * 32
-    framewidth = int((inputWidth//2)//32) * 32
+    # print("new frame", k+1)
 
-    blob = cv2.dnn.blobFromImage(
-        frame, 1 / 255.0, (framewidth, frameheight), swapRB=True, crop=False)
+vidObj = cv2.VideoCapture(videoPath)
+k = 0
+fps = vidObj.get(cv2.CAP_PROP_FPS)
 
-    net.setInput(blob)
-    # start = time.time()
-    
-    layerOutputs = net.forward(ln)
-    # end = time.time()
-    for output in layerOutputs:
-        # loop over each of the detections
-        for i, detection in enumerate(output):
-            # extract the class ID and confidence (i.e., probability)
-            # of the current object detection
-            scores = detection[5:]
-            classID = np.argmax(scores)
-            confidence = scores[classID]
+# checks whether frames were extracted
+success = 1
 
-            # filter out weak predictions by ensuring the detected
-            # probability is greater than the minimum probability
-            if confidence > preDefinedConfidence:
-                # scale the bounding box coordinates back relative to
-                # the size of the image, keeping in mind that YOLO
-                # actually returns the center (x, y)-coordinates of
-                # the bounding box followed by the boxes' width and
-                # height
-                box = detection[0:4] * \
-                    np.array([framewidth, frameheight,
-                             framewidth, frameheight])
-                (centerX, centerY, width, height) = box.astype("int")
+while success:
+        # vidObj object calls read
+        # function extract frames
+    success, frame = vidObj.read()
+    if success:
+        k += fps  # i.e. at 30 fps, this advances one second
+        # frame = cv2.imread(frameReadPath +str(k)+'.jpg')
+        inputWidth = frame.shape[1]
+        inputHeight = frame.shape[0]
+        # cv2.imwrite("C:\\Users\\ayush\\Desktop\\new\\saved"+str(k)+".jpg", frame)
 
-                # use the center (x, y)-coordinates to derive the top
-                # and and left corner of the bounding box
-                x = int(centerX - (width / 2))
-                y = int(centerY - (height / 2))
+        boxes, confidences, classIDs = [], [], []
+        frame = frame[inputHeight//2:inputHeight, inputWidth//2:inputWidth]
 
-                # update our list of bounding box coordinates,
-                # confidences, and class IDs
-                boxes.append([x, y, int(width), int(height)])
-                confidences.append(float(confidence))
-                classIDs.append(classID)
+        frameheight = int((inputHeight//2)//32) * 32
+        framewidth = int((inputWidth//2)//32) * 32
 
-    idxs = cv2.dnn.NMSBoxes(boxes, confidences, preDefinedConfidence,
-                            preDefinedThreshold)
+        blob = cv2.dnn.blobFromImage(
+            frame, 1 / 255.0, (framewidth, frameheight), swapRB=True, crop=False)
 
-    drawDetectionBoxes(idxs, boxes, classIDs, confidences, frame)
+        net.setInput(blob)
+        # start = time.time()
+        
+        layerOutputs = net.forward(ln)
+        # end = time.time()
+        for output in layerOutputs:
+            # loop over each of the detections
+            for i, detection in enumerate(output):
+                # extract the class ID and confidence (i.e., probability)
+                # of the current object detection
+                scores = detection[5:]
+                classID = np.argmax(scores)
+                confidence = scores[classID]
 
-    vehicle_count, current_detections = count_vehicles(
-        idxs, boxes, classIDs, vehicle_count, previous_frame_detections, frame)
+                # filter out weak predictions by ensuring the detected
+                # probability is greater than the minimum probability
+                if confidence > preDefinedConfidence:
+                    # scale the bounding box coordinates back relative to
+                    # the size of the image, keeping in mind that YOLO
+                    # actually returns the center (x, y)-coordinates of
+                    # the bounding box followed by the boxes' width and
+                    # height
+                    box = detection[0:4] * \
+                        np.array([framewidth, frameheight,
+                                framewidth, frameheight])
+                    (centerX, centerY, width, height) = box.astype("int")
 
-    displayVehicleCount(frame, vehicle_count)
+                    # use the center (x, y)-coordinates to derive the top
+                    # and and left corner of the bounding box
+                    x = int(centerX - (width / 2))
+                    y = int(centerY - (height / 2))
 
-    # image saved to disk (name: saved_image, src: frame)
-    path = savePath +str(k)+'.jpg'
-    cv2.imwrite(path, frame)
+                    # update our list of bounding box coordinates,
+                    # confidences, and class IDs
+                    boxes.append([x, y, int(width), int(height)])
+                    confidences.append(float(confidence))
+                    classIDs.append(classID)
 
-    # Updating with the current frame detections
+        idxs = cv2.dnn.NMSBoxes(boxes, confidences, preDefinedConfidence,
+                                preDefinedThreshold)
 
-    previous_frame_detections = []
-    for cx, cy, t in current_detections:
-        previous_frame_detections.append(BoundingBox(
-            cx, cy, current_detections.get((cx, cy, t)), t))
+        drawDetectionBoxes(idxs, boxes, classIDs, confidences, frame)
 
-    # while True:
-    schedule.run_pending()
-    # time.sleep(1)
-    # finalList = [[valuesHourly['two_wheeler'], valuesHourly['four_wheeler'], valuesHourly['pedestrian']]]
-    # request = sheet.values().append(spreadsheetId=SAMPLE_SPREADSHEET_ID, range="sample1!A1:C1", valueInputOption="USER_ENTERED", insertDataOption = "INSERT_ROWS", body={"values":finalList}).execute()
-    # uploadDataHourly()
+        vehicle_count, current_detections = count_vehicles(
+            idxs, boxes, classIDs, vehicle_count, previous_frame_detections, frame)
+
+        displayVehicleCount(frame, vehicle_count)
+
+        # image saved to disk (name: saved_image, src: frame)
+        path = savePath +str(k)+'.jpg'
+        cv2.imwrite(path, frame)
+
+        # Updating with the current frame detections
+
+        previous_frame_detections = []
+        for cx, cy, t in current_detections:
+            previous_frame_detections.append(BoundingBox(
+                cx, cy, current_detections.get((cx, cy, t)), t))
+
+        # while True:
+        schedule.run_pending()
+        # time.sleep(1)
+        # finalList = [[valuesHourly['two_wheeler'], valuesHourly['four_wheeler'], valuesHourly['pedestrian']]]
+        # request = sheet.values().append(spreadsheetId=SAMPLE_SPREADSHEET_ID, range="sample1!A1:C1", valueInputOption="USER_ENTERED", insertDataOption = "INSERT_ROWS", body={"values":finalList}).execute()
+        # uploadDataHourly()
+        vidObj.set(1, k)
+        print(k)
+    else:
+        vidObj.release()
+        break
 
 end = time.time()
-print(end - start)
+print(end-start)
