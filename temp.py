@@ -11,7 +11,7 @@ import time
 
 frameReadPath = 'D:\\Capstone\\images\\ezgif-frame-0'
 savePath = 'C:\\Users\\ayush\\Desktop\\saved\\saved_image-0'
-videoPath = 'C:\\Users\\ayush\\Desktop\\7th Semester\\4. Capstone Project\\Test Videos\\videoplayback.mp4'
+videoPath = 'C:\\Users\\ayush\\Desktop\\7th Semester\\4. Capstone Project\\Test Videos\\Capstone.mp4'
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 SERVICE_ACCOUNT_FILE = 'keys.json'
 creds = None
@@ -108,8 +108,8 @@ def compare(old, new):
 
 def drawDetectionBoxes(idxs, boxes, classIDs, confidences, frame):
     # ensure at least one detection exists
-    cv2.rectangle(frame, (0, int(5/8*frameheight)),
-                  (framewidth, int(3/4*frameheight)), (255, 0, 0), 2)
+    cv2.rectangle(frame, (0, int(((5/8)-(1/16))*frameheight)),
+                  (framewidth, int(((3/4)+(1/16))*frameheight)), (255, 0, 0), 2)
     if len(idxs) > 0:
         # loop over the indices we are keeping
         for i in idxs.flatten():
@@ -164,8 +164,8 @@ def displayVehicleCount(frame, vehicle_count):
 
 
 def validcomparison(centerX, centerY):
-    height_s = frameheight * 5/8
-    height_e = frameheight * 3/4
+    height_s = frameheight * (5/8 - 1/16)
+    height_e = frameheight * (3/4 + 1/16)
     if(height_s <= centerY and centerY <= height_e):
         return True
     return False
@@ -201,7 +201,7 @@ def count_vehicles(idxs, boxes, classIDs, vehicle_count, previous_frame_detectio
 
             centerX = x + (w//2)
             centerY = y + (h//2)
-# When the detection is in the list of vehicles, AND
+            # When the detection is in the list of vehicles, AND
             # it crosses the line AND
             # the ID of the detection is not present in the vehicles
             if (LABELS[classIDs[i]] in list_of_vehicles and validcomparison(centerX, centerY) == True):
@@ -257,7 +257,7 @@ while success:
         # function extract frames
     success, frame = vidObj.read()
     if success:
-        k += fps  # i.e. at 30 fps, this advances one second
+        k += fps/4  # i.e. at 30 fps, this advances one second
         # frame = cv2.imread(frameReadPath +str(k)+'.jpg')
         inputWidth = frame.shape[1]
         inputHeight = frame.shape[0]
