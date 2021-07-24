@@ -31,9 +31,9 @@ frameheight = 0
 list_of_vehicles = ["bicycle", "car", "motorbike", "bus", "person"]
 
 values = {"two_wheeler": 0, "four_wheeler": 0, "pedestrian": 0 }
-valuesHourly = {"two_wheeler": 0, "four_wheeler": 0, "pedestrian": 0 }
 valuesDaily = {"two_wheeler": 0, "four_wheeler": 0, "pedestrian": 0 }
 valuesWeekly = {"two_wheeler": 0, "four_wheeler": 0, "pedestrian": 0 }
+valuesMonthly = {"two_wheeler": 0, "four_wheeler": 0, "pedestrian": 0 }
 
 two_wheeler = ["bicycle", "motorbike"]
 four_wheeler = ["car", "bus","truck"]
@@ -56,6 +56,16 @@ COLORS = np.random.randint(0, 255, size=(len(LABELS), 3), dtype="uint8")
 previous_frame_detections = []
 
 
+#Remove
+WeeklyDateStr = datetime.date.today()
+DailyDateStr = datetime.date.today()
+MonthlyDateStr = datetime.date.today()
+
+# WeeklyDate = WeeklyDateStr.strftime('%d/%m/%Y')
+# DailyDate = WeeklyDateStr.strftime('%d/%m/%Y')
+# MonthlyDate = WeeklyDateStr.strftime('%d/%m/%Y')
+
+
 class BoundingBox:
     def __init__(self, x, y, id, t):
         self.x = x
@@ -67,33 +77,42 @@ class BoundingBox:
 flag = 0
 threshold = 20  # m.inf
 
-def uploadDataHourly():
-    global valuesHourly
-    # datetime.datetime.now() <-- For timestamp
-    finalList = [[valuesHourly['two_wheeler'], valuesHourly['four_wheeler'], valuesHourly['pedestrian']]]
-    valuesHourly = {"two_wheeler": 0, "four_wheeler": 0, "pedestrian": 0 }
-    request = sheet.values().append(spreadsheetId=SAMPLE_SPREADSHEET_ID, range="Hourly!A1:C1", valueInputOption="USER_ENTERED", insertDataOption = "INSERT_ROWS", body={"values":finalList}).execute()
-
 def uploadDataDaily():
     global valuesDaily
-    finalList = [[valuesDaily['two_wheeler'], valuesDaily['four_wheeler'], valuesDaily['pedestrian']]]
+    # datetime.datetime.now() <-- For timestamp
+    global DailyDateStr
+    DailyDateStr = DailyDateStr + datetime.timedelta(days=1)
+    # print(" Daily Date:", str(DailyDateStr))
+    finalList = [[str(DailyDateStr), valuesDaily['two_wheeler'], valuesDaily['four_wheeler'], valuesDaily['pedestrian']]]
     valuesDaily = {"two_wheeler": 0, "four_wheeler": 0, "pedestrian": 0 }
-    request = sheet.values().append(spreadsheetId=SAMPLE_SPREADSHEET_ID, range="Daily!A1:C1", valueInputOption="USER_ENTERED", insertDataOption = "INSERT_ROWS", body={"values":finalList}).execute()
+    request = sheet.values().append(spreadsheetId=SAMPLE_SPREADSHEET_ID, range="Daily!A1:D1", valueInputOption="USER_ENTERED", insertDataOption = "INSERT_ROWS", body={"values":finalList}).execute()
 
 def uploadDataWeekly():
     global valuesWeekly
-    finalList = [[valuesWeekly['two_wheeler'], valuesWeekly['four_wheeler'], valuesWeekly['pedestrian']]]
+    global WeeklyDateStr
+    WeeklyDateStr = WeeklyDateStr + datetime.timedelta(days=7)
+    # print(" Weekly Date:", str(WeeklyDateStr))
+    finalList = [[str(WeeklyDateStr), valuesWeekly['two_wheeler'], valuesWeekly['four_wheeler'], valuesWeekly['pedestrian']]]
     valuesWeekly = {"two_wheeler": 0, "four_wheeler": 0, "pedestrian": 0 }
-    request = sheet.values().append(spreadsheetId=SAMPLE_SPREADSHEET_ID, range="Weekly!A1:C1", valueInputOption="USER_ENTERED", insertDataOption = "INSERT_ROWS", body={"values":finalList}).execute()
+    request = sheet.values().append(spreadsheetId=SAMPLE_SPREADSHEET_ID, range="Weekly!A1:D1", valueInputOption="USER_ENTERED", insertDataOption = "INSERT_ROWS", body={"values":finalList}).execute()
+
+def uploadDataMonthly():
+    global valuesMonthly
+    global MonthlyDateStr
+    MonthlyDateStr = MonthlyDateStr + datetime.timedelta(days=28)
+    # print(" Monthly Date:", str(MonthlyDateStr))
+    finalList = [[str(MonthlyDateStr), valuesMonthly['two_wheeler'], valuesMonthly['four_wheeler'], valuesMonthly['pedestrian']]]
+    valuesMonthly = {"two_wheeler": 0, "four_wheeler": 0, "pedestrian": 0 }
+    request = sheet.values().append(spreadsheetId=SAMPLE_SPREADSHEET_ID, range="Monthly!A1:D1", valueInputOption="USER_ENTERED", insertDataOption = "INSERT_ROWS", body={"values":finalList}).execute()
 
 #Scheduler
-# schedule.every().hour.do(uploadDataHourly)
-# schedule.every().day.at("23:59").do(uploadDataDaily)
-# schedule.every().monday().do(uploadDataWeekly)
+# schedule.every().hour.do(uploadDataDaily)
+# schedule.every().day.at("23:59").do(uploadDataWeekly)
+# schedule.every().monday().do(uploadDataMonthly)
 
-schedule.every(10).seconds.do(uploadDataHourly)
-schedule.every(20).seconds.do(uploadDataDaily)
-schedule.every(30).seconds.do(uploadDataWeekly)
+schedule.every(10).seconds.do(uploadDataDaily)
+schedule.every(20).seconds.do(uploadDataWeekly)
+schedule.every(30).seconds.do(uploadDataMonthly)
 
 def compare(old, new):
     global flag
@@ -131,7 +150,7 @@ def drawDetectionBoxes(idxs, boxes, classIDs, confidences, frame):
             # Draw a green dot in the middle of the box
             cv2.circle(frame, (x + (w//2), y + (h//2)),
                        2, (0, 0xFF, 0), thickness=2)
-
+            
 
 def boxInPreviousFrames(previous_frame_detections, current_box, current_detections):
     centerX, centerY, id, t = current_box
@@ -146,7 +165,6 @@ def boxInPreviousFrames(previous_frame_detections, current_box, current_detectio
                                ] = previous_frame_detections[i].id
             return True
     return False
-
 
 def displayVehicleCount(frame, vehicle_count):
     string = "Two Wheeler :"+str(values['two_wheeler'])+" Four Wheeler : "+str(
@@ -174,19 +192,19 @@ def validcomparison(centerX, centerY):
 def assignLabel(id):
     if(id in two_wheeler):
         values['two_wheeler'] = values['two_wheeler'] + 1
-        valuesHourly['two_wheeler'] = valuesHourly['two_wheeler'] + 1
         valuesDaily['two_wheeler'] = valuesDaily['two_wheeler'] + 1
         valuesWeekly['two_wheeler'] = valuesWeekly['two_wheeler'] + 1
+        valuesMonthly['two_wheeler'] = valuesMonthly['two_wheeler'] + 1
     elif(id in four_wheeler):
         values['four_wheeler'] = values['four_wheeler'] + 1
-        valuesHourly['four_wheeler'] = valuesHourly['four_wheeler'] + 1
         valuesDaily['four_wheeler'] = valuesDaily['four_wheeler'] + 1
         valuesWeekly['four_wheeler'] = valuesWeekly['four_wheeler'] + 1
+        valuesMonthly['four_wheeler'] = valuesMonthly['four_wheeler'] + 1
     elif(id in pedestrian):
         values['pedestrian'] = values['pedestrian'] + 1
-        valuesHourly['pedestrian'] = valuesHourly['pedestrian'] + 1
         valuesDaily['pedestrian'] = valuesDaily['pedestrian'] + 1
         valuesWeekly['pedestrian'] = valuesWeekly['pedestrian'] + 1
+        valuesMonthly['pedestrian'] = valuesMonthly['pedestrian'] + 1
 
 
 def count_vehicles(idxs, boxes, classIDs, vehicle_count, previous_frame_detections, frame):
@@ -334,9 +352,9 @@ while success:
         # while True:
         schedule.run_pending()
         # time.sleep(1)
-        # finalList = [[valuesHourly['two_wheeler'], valuesHourly['four_wheeler'], valuesHourly['pedestrian']]]
+        # finalList = [[valuesDaily['two_wheeler'], valuesDaily['four_wheeler'], valuesDaily['pedestrian']]]
         # request = sheet.values().append(spreadsheetId=SAMPLE_SPREADSHEET_ID, range="sample1!A1:C1", valueInputOption="USER_ENTERED", insertDataOption = "INSERT_ROWS", body={"values":finalList}).execute()
-        # uploadDataHourly()
+        # uploadDataDaily()
         vidObj.set(1, k)
         print(k)
     else:

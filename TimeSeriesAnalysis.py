@@ -31,8 +31,7 @@ data = pd.read_csv(
 scope = ['https://spreadsheets.google.com/feeds',
          'https://www.googleapis.com/auth/drive']
 # add credentials to the account
-creds = ServiceAccountCredentials.from_json_keyfile_name(
-    '/content/keys.json', scope)
+creds = ServiceAccountCredentials.from_json_keyfile_name('./keys.json', scope)
 # authorize the clientsheet
 client = gspread.authorize(creds)
 # get the instance of the Spreadsheet
@@ -80,26 +79,31 @@ def getPredictions(numberOfPredictions, x_input, model):
 
 
 def updateData(data, type_vehicle, time):
-    cell_row = 1
+    cell_row = 2
     cell_column = 1
 
-    if type_vehicle == 'Two-wheeler':
-        cell_row = 2
-    if type_vehicle == 'Four-wheeler':
-        cell_row = 3
-    if type_vehicle == 'Pedestrian':
-        cell_row = 4
-
-    if time == 'Hourly':
-        cell_column = 2
-    if time == 'Daily':
-        cell_column = 3
-    if time == 'Weekly':
+    if type_vehicle == 'Two-wheeler' and time == 'Daily':
+        cell_column = 1
+    if type_vehicle == 'Two-wheeler' and time == 'Weekly':
         cell_column = 4
+    if type_vehicle == 'Two-wheeler' and time == 'Monthly':
+        cell_column = 7
+    if type_vehicle == 'Four-wheeler' and time == 'Daily':
+        cell_column = 2
+    if type_vehicle == 'Four-wheeler' and time == 'Weekly':
+        cell_column = 5
+    if type_vehicle == 'Four-wheeler' and time == 'Monthly':
+        cell_column = 8
+    if type_vehicle == 'Pedestrian' and time == 'Daily':
+        cell_column = 3
+    if type_vehicle == 'Pedestrian' and time == 'Weekly':
+        cell_column = 6
+    if type_vehicle == 'Pedestrian' and time == 'Monthly':
+        cell_column = 9
 
-    update_sheet_instance = sheet.get_worksheet(3)
+    update_sheet_instance = sheet.get_worksheet(4)
     # Update Cell
-    update_sheet_instance.update_cell(cell_row, cell_column, data[0])
+    update_sheet_instance.update_cell(cell_row, cell_column, str(data[0]))
 
 
 def calculateAndUploadData(field, time):
@@ -137,3 +141,4 @@ calculateAndUploadData('Four-wheeler', 'Weekly')
 calculateAndUploadData('Pedestrian', 'Hourly')
 calculateAndUploadData('Pedestrian', 'Daily')
 calculateAndUploadData('Pedestrian', 'Weekly')
+
