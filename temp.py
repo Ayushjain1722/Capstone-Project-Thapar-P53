@@ -7,7 +7,7 @@ from googleapiclient.discovery import build
 from google.oauth2 import service_account
 import schedule
 import time
-
+from TimeSeriesAnalysis import TimeSeriesPrediction
 
 frameReadPath = 'D:\\Capstone\\images\\ezgif-frame-0'
 savePath = 'C:\\Users\\ayush\\Desktop\\saved\\saved_image-0'
@@ -65,6 +65,7 @@ MonthlyDateStr = datetime.date.today()
 # DailyDate = WeeklyDateStr.strftime('%d/%m/%Y')
 # MonthlyDate = WeeklyDateStr.strftime('%d/%m/%Y')
 
+TSObj = TimeSeriesPrediction()
 
 class BoundingBox:
     def __init__(self, x, y, id, t):
@@ -86,6 +87,9 @@ def uploadDataDaily():
     finalList = [[str(DailyDateStr), valuesDaily['two_wheeler'], valuesDaily['four_wheeler'], valuesDaily['pedestrian']]]
     valuesDaily = {"two_wheeler": 0, "four_wheeler": 0, "pedestrian": 0 }
     request = sheet.values().append(spreadsheetId=SAMPLE_SPREADSHEET_ID, range="Daily!A1:D1", valueInputOption="USER_ENTERED", insertDataOption = "INSERT_ROWS", body={"values":finalList}).execute()
+    TSObj.calculateAndUploadData('Two-wheeler', 'Daily')
+    TSObj.calculateAndUploadData('Four-wheeler', 'Daily')
+    TSObj.calculateAndUploadData('Pedestrian', 'Daily')
 
 def uploadDataWeekly():
     global valuesWeekly
@@ -95,6 +99,10 @@ def uploadDataWeekly():
     finalList = [[str(WeeklyDateStr), valuesWeekly['two_wheeler'], valuesWeekly['four_wheeler'], valuesWeekly['pedestrian']]]
     valuesWeekly = {"two_wheeler": 0, "four_wheeler": 0, "pedestrian": 0 }
     request = sheet.values().append(spreadsheetId=SAMPLE_SPREADSHEET_ID, range="Weekly!A1:D1", valueInputOption="USER_ENTERED", insertDataOption = "INSERT_ROWS", body={"values":finalList}).execute()
+    TSObj.calculateAndUploadData('Two-wheeler', 'Weekly')
+    TSObj.calculateAndUploadData('Four-wheeler', 'Weekly')
+    TSObj.calculateAndUploadData('Pedestrian', 'Weekly')
+
 
 def uploadDataMonthly():
     global valuesMonthly
@@ -104,11 +112,14 @@ def uploadDataMonthly():
     finalList = [[str(MonthlyDateStr), valuesMonthly['two_wheeler'], valuesMonthly['four_wheeler'], valuesMonthly['pedestrian']]]
     valuesMonthly = {"two_wheeler": 0, "four_wheeler": 0, "pedestrian": 0 }
     request = sheet.values().append(spreadsheetId=SAMPLE_SPREADSHEET_ID, range="Monthly!A1:D1", valueInputOption="USER_ENTERED", insertDataOption = "INSERT_ROWS", body={"values":finalList}).execute()
+    TSObj.calculateAndUploadData('Two-wheeler', 'Monthly')
+    TSObj.calculateAndUploadData('Four-wheeler', 'Monthly')
+    TSObj.calculateAndUploadData('Pedestrian', 'Monthly')
 
 #Scheduler
-# schedule.every().hour.do(uploadDataDaily)
-# schedule.every().day.at("23:59").do(uploadDataWeekly)
-# schedule.every().monday().do(uploadDataMonthly)
+# schedule.every().day.at("23:59").do(uploadDataDaily)  #Daily
+# schedule.every().monday().do(uploadDataWeekly)        #Weekly
+# schedule.every(2592000).seconds.do(uploadDataMonthly) #Monthly
 
 schedule.every(10).seconds.do(uploadDataDaily)
 schedule.every(20).seconds.do(uploadDataWeekly)
@@ -360,6 +371,7 @@ while success:
     else:
         vidObj.release()
         break
+
 
 end = time.time()
 print(end-start)
