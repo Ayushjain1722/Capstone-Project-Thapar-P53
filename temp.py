@@ -88,8 +88,8 @@ def uploadDataDaily():
     valuesDaily = {"two_wheeler": 0, "four_wheeler": 0, "pedestrian": 0 }
     request = sheet.values().append(spreadsheetId=SAMPLE_SPREADSHEET_ID, range="Daily!A1:D1", valueInputOption="USER_ENTERED", insertDataOption = "INSERT_ROWS", body={"values":finalList}).execute()
     TSObj.calculateAndUploadData('Two-wheeler', 'Daily')
-    TSObj.calculateAndUploadData('Four-wheeler', 'Daily')
-    TSObj.calculateAndUploadData('Pedestrian', 'Daily')
+    # TSObj.calculateAndUploadData('Four-wheeler', 'Daily')
+    # TSObj.calculateAndUploadData('Pedestrian', 'Daily')
 
 def uploadDataWeekly():
     global valuesWeekly
@@ -100,8 +100,8 @@ def uploadDataWeekly():
     valuesWeekly = {"two_wheeler": 0, "four_wheeler": 0, "pedestrian": 0 }
     request = sheet.values().append(spreadsheetId=SAMPLE_SPREADSHEET_ID, range="Weekly!A1:D1", valueInputOption="USER_ENTERED", insertDataOption = "INSERT_ROWS", body={"values":finalList}).execute()
     TSObj.calculateAndUploadData('Two-wheeler', 'Weekly')
-    TSObj.calculateAndUploadData('Four-wheeler', 'Weekly')
-    TSObj.calculateAndUploadData('Pedestrian', 'Weekly')
+    # TSObj.calculateAndUploadData('Four-wheeler', 'Weekly')
+    # TSObj.calculateAndUploadData('Pedestrian', 'Weekly')
 
 
 def uploadDataMonthly():
@@ -113,17 +113,17 @@ def uploadDataMonthly():
     valuesMonthly = {"two_wheeler": 0, "four_wheeler": 0, "pedestrian": 0 }
     request = sheet.values().append(spreadsheetId=SAMPLE_SPREADSHEET_ID, range="Monthly!A1:D1", valueInputOption="USER_ENTERED", insertDataOption = "INSERT_ROWS", body={"values":finalList}).execute()
     TSObj.calculateAndUploadData('Two-wheeler', 'Monthly')
-    TSObj.calculateAndUploadData('Four-wheeler', 'Monthly')
-    TSObj.calculateAndUploadData('Pedestrian', 'Monthly')
+    # TSObj.calculateAndUploadData('Four-wheeler', 'Monthly')
+    # TSObj.calculateAndUploadData('Pedestrian', 'Monthly')
 
 #Scheduler
 # schedule.every().day.at("23:59").do(uploadDataDaily)  #Daily
 # schedule.every().monday().do(uploadDataWeekly)        #Weekly
 # schedule.every(2592000).seconds.do(uploadDataMonthly) #Monthly
 
-schedule.every(10).seconds.do(uploadDataDaily)
-schedule.every(20).seconds.do(uploadDataWeekly)
-schedule.every(30).seconds.do(uploadDataMonthly)
+schedule.every(20).seconds.do(uploadDataDaily)
+schedule.every(40).seconds.do(uploadDataWeekly)
+schedule.every(60).seconds.do(uploadDataMonthly)
 
 def compare(old, new):
     global flag

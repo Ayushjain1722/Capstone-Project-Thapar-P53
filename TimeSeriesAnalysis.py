@@ -29,8 +29,8 @@ class TimeSeriesPrediction:
 
 
         # choose a number of time steps
-        n_steps = 5
-        n_features = 1
+        self.n_steps = 5
+        self.n_features = 1
 
     def prepare_data(self, timeseries_data, n_features):
         X, y = [], []
@@ -72,8 +72,11 @@ class TimeSeriesPrediction:
                 temp_input.append(yhat[0][0])
                 lst_output.append(yhat[0][0])
                 i = i+1
-
-        return np.ceil(lst_output)
+        if np.ceil(lst_output)[0] < 0:
+            return 0
+        else:
+            return np.ceil(lst_output[0])
+        # return max(0,np.ceil(lst_output))
 
     def updateData(self, data, type_vehicle, time):
         cell_row = 2
@@ -100,7 +103,7 @@ class TimeSeriesPrediction:
 
         update_sheet_instance = self.sheet.get_worksheet(4)
         # Update Cell
-        update_sheet_instance.update_cell(cell_row, cell_column, str(data[0]))
+        update_sheet_instance.update_cell(cell_row, cell_column, str(data))
 
     def calculateAndUploadData(self, field, time):
 
