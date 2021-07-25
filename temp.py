@@ -23,7 +23,6 @@ SAMPLE_SPREADSHEET_WEEKLY_ID = '1l6yZlZAFJRJLDZKYFym63EjwAIkCcI2ev-FCUavJHH4'
 service = build('sheets', 'v4', credentials=creds)
 sheet = service.spreadsheets()
 
-# datetime.datetime.now()
 start = time.time()
 
 framewidth = 0
@@ -42,8 +41,6 @@ pedestrian = ["person"]
 preDefinedConfidence = 0.5
 preDefinedThreshold = 0.3
 
-# configPath = ".\\yolo-coco\\yolov3.cfg"
-# weightsPath = ".\\yolo-coco\\yolov3.weights"
 configPath = "D:\\darknet\\cfg\\yolov4.cfg"
 weightsPath = "D:\\darknet\\yolov4.weights"
 
@@ -61,10 +58,6 @@ WeeklyDateStr = datetime.date.today()
 DailyDateStr = datetime.date.today()
 MonthlyDateStr = datetime.date.today()
 
-# WeeklyDate = WeeklyDateStr.strftime('%d/%m/%Y')
-# DailyDate = WeeklyDateStr.strftime('%d/%m/%Y')
-# MonthlyDate = WeeklyDateStr.strftime('%d/%m/%Y')
-
 TSObj = TimeSeriesPrediction()
 
 class BoundingBox:
@@ -80,41 +73,37 @@ threshold = 20  # m.inf
 
 def uploadDataDaily():
     global valuesDaily
-    # datetime.datetime.now() <-- For timestamp
     global DailyDateStr
     DailyDateStr = DailyDateStr + datetime.timedelta(days=1)
-    # print(" Daily Date:", str(DailyDateStr))
     finalList = [[str(DailyDateStr), valuesDaily['two_wheeler'], valuesDaily['four_wheeler'], valuesDaily['pedestrian']]]
     valuesDaily = {"two_wheeler": 0, "four_wheeler": 0, "pedestrian": 0 }
     request = sheet.values().append(spreadsheetId=SAMPLE_SPREADSHEET_ID, range="Daily!A1:D1", valueInputOption="USER_ENTERED", insertDataOption = "INSERT_ROWS", body={"values":finalList}).execute()
     TSObj.calculateAndUploadData('Two-wheeler', 'Daily')
-    # TSObj.calculateAndUploadData('Four-wheeler', 'Daily')
-    # TSObj.calculateAndUploadData('Pedestrian', 'Daily')
+    TSObj.calculateAndUploadData('Four-wheeler', 'Daily')
+    TSObj.calculateAndUploadData('Pedestrian', 'Daily')
 
 def uploadDataWeekly():
     global valuesWeekly
     global WeeklyDateStr
     WeeklyDateStr = WeeklyDateStr + datetime.timedelta(days=7)
-    # print(" Weekly Date:", str(WeeklyDateStr))
     finalList = [[str(WeeklyDateStr), valuesWeekly['two_wheeler'], valuesWeekly['four_wheeler'], valuesWeekly['pedestrian']]]
     valuesWeekly = {"two_wheeler": 0, "four_wheeler": 0, "pedestrian": 0 }
     request = sheet.values().append(spreadsheetId=SAMPLE_SPREADSHEET_ID, range="Weekly!A1:D1", valueInputOption="USER_ENTERED", insertDataOption = "INSERT_ROWS", body={"values":finalList}).execute()
     TSObj.calculateAndUploadData('Two-wheeler', 'Weekly')
-    # TSObj.calculateAndUploadData('Four-wheeler', 'Weekly')
-    # TSObj.calculateAndUploadData('Pedestrian', 'Weekly')
+    TSObj.calculateAndUploadData('Four-wheeler', 'Weekly')
+    TSObj.calculateAndUploadData('Pedestrian', 'Weekly')
 
 
 def uploadDataMonthly():
     global valuesMonthly
     global MonthlyDateStr
     MonthlyDateStr = MonthlyDateStr + datetime.timedelta(days=28)
-    # print(" Monthly Date:", str(MonthlyDateStr))
     finalList = [[str(MonthlyDateStr), valuesMonthly['two_wheeler'], valuesMonthly['four_wheeler'], valuesMonthly['pedestrian']]]
     valuesMonthly = {"two_wheeler": 0, "four_wheeler": 0, "pedestrian": 0 }
     request = sheet.values().append(spreadsheetId=SAMPLE_SPREADSHEET_ID, range="Monthly!A1:D1", valueInputOption="USER_ENTERED", insertDataOption = "INSERT_ROWS", body={"values":finalList}).execute()
     TSObj.calculateAndUploadData('Two-wheeler', 'Monthly')
-    # TSObj.calculateAndUploadData('Four-wheeler', 'Monthly')
-    # TSObj.calculateAndUploadData('Pedestrian', 'Monthly')
+    TSObj.calculateAndUploadData('Four-wheeler', 'Monthly')
+    TSObj.calculateAndUploadData('Pedestrian', 'Monthly')
 
 #Scheduler
 # schedule.every().day.at("23:59").do(uploadDataDaily)  #Daily
@@ -268,11 +257,6 @@ ln = net.getLayerNames()
 ln = [ln[i[0] - 1] for i in net.getUnconnectedOutLayers()]
 
 vehicle_count = 0
-# print('here')
-# for k in range(1, 91):
-
-
-    # print("new frame", k+1)
 
 vidObj = cv2.VideoCapture(videoPath)
 k = 0
@@ -287,7 +271,6 @@ while success:
     success, frame = vidObj.read()
     if success:
         k += fps/4  # i.e. at 30 fps, this advances one second
-        # frame = cv2.imread(frameReadPath +str(k)+'.jpg')
         inputWidth = frame.shape[1]
         inputHeight = frame.shape[0]
         # cv2.imwrite("C:\\Users\\ayush\\Desktop\\new\\saved"+str(k)+".jpg", frame)
@@ -302,10 +285,8 @@ while success:
             frame, 1 / 255.0, (framewidth, frameheight), swapRB=True, crop=False)
 
         net.setInput(blob)
-        # start = time.time()
         
         layerOutputs = net.forward(ln)
-        # end = time.time()
         for output in layerOutputs:
             # loop over each of the detections
             for i, detection in enumerate(output):
@@ -363,9 +344,6 @@ while success:
         # while True:
         schedule.run_pending()
         # time.sleep(1)
-        # finalList = [[valuesDaily['two_wheeler'], valuesDaily['four_wheeler'], valuesDaily['pedestrian']]]
-        # request = sheet.values().append(spreadsheetId=SAMPLE_SPREADSHEET_ID, range="sample1!A1:C1", valueInputOption="USER_ENTERED", insertDataOption = "INSERT_ROWS", body={"values":finalList}).execute()
-        # uploadDataDaily()
         vidObj.set(1, k)
         print(k)
     else:

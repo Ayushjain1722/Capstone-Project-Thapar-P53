@@ -10,8 +10,7 @@ from tensorflow.keras.layers import Flatten
 # preparing independent and dependent features
 class TimeSeriesPrediction:
     def __init__(self):
-        self.data = pd.read_csv(
-            'https://docs.google.com/spreadsheets/d/1Sy34s0VXEBxLzoAQsCPNZR51pHKAfYwEzM-ZmGZshFY/edit#gid=797493677', error_bad_lines=False)
+        self.data = pd.read_csv('https://docs.google.com/spreadsheets/d/1Sy34s0VXEBxLzoAQsCPNZR51pHKAfYwEzM-ZmGZshFY/edit#gid=797493677', error_bad_lines=False)
         # define the scope
         self.scope = ['https://spreadsheets.google.com/feeds',
                 'https://www.googleapis.com/auth/drive']
@@ -47,22 +46,16 @@ class TimeSeriesPrediction:
         return np.array(X), np.array(y)
 
     def getPredictions(self,numberOfPredictions, x_input, model):
-        # x_input = pd.Series(records_df['Four-wheeler'].tail(4)).to_numpy()
         temp_input = list(x_input)
         lst_output = []
         i = 0
         while(i < numberOfPredictions):
             if(len(temp_input) > self.n_steps):
                 x_input = np.array(temp_input[1:])
-                # print("{} day input {}".format(i,x_input))
-                # print(x_input)
                 x_input = x_input.reshape((1, self.n_steps, self.n_features))
-                # print(x_input)
                 yhat = model.predict(x_input, verbose=0)
-                # print("{} day output {}".format(i,yhat))
                 temp_input.append(yhat[0][0])
                 temp_input = temp_input[1:]
-                # print(temp_input)
                 lst_output.append(yhat[0][0])
                 i = i+1
             else:
@@ -76,7 +69,6 @@ class TimeSeriesPrediction:
             return 0
         else:
             return np.ceil(lst_output[0])
-        # return max(0,np.ceil(lst_output))
 
     def updateData(self, data, type_vehicle, time):
         cell_row = 2
